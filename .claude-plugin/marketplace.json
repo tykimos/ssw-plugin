@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "ssw-plugin",
+  "description": "Sun and Space Weather toolkit for Claude Code",
+  "owner": {
+    "name": "sswlab",
+    "url": "https://github.com/sswlab"
+  },
+  "plugins": [
+    {
+      "name": "ssw-plugin",
+      "description": "Solar observation data download, ML preprocessing, deep learning, and visualization for SDO, STEREO, and Solar Orbiter missions",
+      "version": "1.0.0",
+      "source": "./",
+      "category": "science",
+      "homepage": "https://github.com/sswlab/ssw-plugin",
+      "tags": ["solar", "space-weather", "heliophysics", "ML", "deep-learning", "SDO", "STEREO", "Solar-Orbiter", "EUV", "FITS"]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "name": "ssw-plugin",
+  "version": "1.0.0",
+  "description": "Sun and Space Weather toolkit - solar data download, preprocessing, ML training, and visualization",
+  "skills": "./skills/"
+}
