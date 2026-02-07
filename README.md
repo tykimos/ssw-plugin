@@ -20,6 +20,12 @@ Sun and Space Weather (SSW) toolkit for [Claude Code](https://claude.ai/). Downl
 - [Skill 3: ssw-ml](#skill-3-ssw-ml)
 - [Skill 4: ssw-viz](#skill-4-ssw-viz)
 - [Natural Language Usage](#natural-language-usage)
+- [Example Gallery](#example-gallery)
+  - [Example 1: Download STEREO Data](#example-1-download-stereo-data)
+  - [Example 2: Download Solar Orbiter Data](#example-2-download-solar-orbiter-data)
+  - [Example 3: Visualize STEREO Multi-Wavelength Pair](#example-3-visualize-stereo-multi-wavelength-pair)
+  - [Example 4: Visualize Solar Orbiter Multi-Wavelength Pair](#example-4-visualize-solar-orbiter-multi-wavelength-pair)
+  - [Example 5: Pixel Intensity Distribution](#example-5-pixel-intensity-distribution)
 - [For Plugin Developers](#for-plugin-developers)
   - [Plugin Structure](#plugin-structure)
   - [How to Create Your Own Plugin](#how-to-create-your-own-plugin)
@@ -841,6 +847,177 @@ Korean is also supported:
 | "AIA 데이터 전처리해줘" | ssw-prep |
 | "태양 딥러닝 모델 학습해줘" | ssw-ml |
 | "태양 이미지 시각화해줘" | ssw-viz |
+
+---
+
+## Example Gallery
+
+Real examples run with this plugin. All outputs below are from actual execution.
+
+### Example 1: Download STEREO Data
+
+Download a STEREO-A EUVI 171A + 304A wavelength pair for 2024-06-06:
+
+```python
+from ssw_tools.download_data.stereo_down import run_stereo
+from datetime import datetime
+
+sd = datetime.strptime("2024-06-06T00:00", "%Y-%m-%dT%H:%M")
+run_stereo(sd, None, delta_hours=12, out_path='./stereo_data/',
+           level=1, tolerance_min=15, cadence_min=1440)
+```
+
+**Execution log:**
+
+```
+------------ Nearest from 2024-06-06 00:00:00 ------------
+Start Time_171    2024-06-06 00:07:00
+Start Time_304    2024-06-06 00:05:45
+
+------------ Download ------------
+20240606_000700_n4euA.fts: 100%|██████████| 8.41M/8.41M [00:05<00:00]
+20240606_000545_n4euA.fts: 100%|██████████| 8.41M/8.41M [00:03<00:00]
+
+------------ Download Complete ------------
+['stereo_data/stereo-174/20240606_000700_n4euA.fts']
+['stereo_data/stereo-304/20240606_000545_n4euA.fts']
+```
+
+**Output**: Two FITS files (~8.4 MB each) in `stereo-174/` and `stereo-304/` subdirectories.
+
+### Example 2: Download Solar Orbiter Data
+
+Download a Solar Orbiter EUI/FSI 174A + 304A wavelength pair for 2024-06-01:
+
+```python
+from ssw_tools.download_data.solo_down import run_solo
+from datetime import datetime
+
+sd = datetime.strptime("2024-06-01T00:00", "%Y-%m-%dT%H:%M")
+run_solo(sd, None, delta_hours=12, out_path='./solo_data/',
+         level=1, tolerance_min=15, cadence_min=1440)
+```
+
+**Execution log:**
+
+```
+------------ 15분 이내로 촬영된 데이터 쌍 후보 ------------
+            Start Time_174          Start Time_304
+72 2024-06-01 00:00:45.206 2024-06-01 00:00:15.207
+
+------------ Nearest from 2024-06-01 00:00:00 ------------
+Start Time_174    2024-06-01 00:00:45.206000
+Start Time_304    2024-06-01 00:00:15.207000
+
+solo_L1_eui-fsi174-image_20240601T000045206_V02.fits: 100%|██████████| 2.51M/2.51M
+solo_L1_eui-fsi304-image_20240601T000015207_V02.fits: 100%|██████████| 2.32M/2.32M
+
+------------ Download Complete ------------
+['solo_data/solo/174/solo_L1_eui-fsi174-image_20240601T000045206_V02.fits']
+['solo_data/solo/304/solo_L1_eui-fsi304-image_20240601T000015207_V02.fits']
+```
+
+**Output**: Two FITS files (~2.5 MB each) in `solo/174/` and `solo/304/` subdirectories.
+
+### Example 3: Visualize STEREO Multi-Wavelength Pair
+
+```python
+import matplotlib.pyplot as plt
+from astropy.io import fits
+from astropy.visualization import ImageNormalize, AsinhStretch
+import numpy as np
+import sunpy.visualization.colormaps  # registers SDO AIA colormaps
+
+f171 = fits.open('./stereo_data/stereo-174/20240606_000700_n4euA.fts')
+f304 = fits.open('./stereo_data/stereo-304/20240606_000545_n4euA.fts')
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+
+for ax, f, cmap, title in [
+    (axes[0], f171, 'sdoaia171', 'STEREO-A EUVI 171A'),
+    (axes[1], f304, 'sdoaia304', 'STEREO-A EUVI 304A'),
+]:
+    data = f[0].data.astype(np.float32)
+    norm = ImageNormalize(vmin=0, vmax=np.percentile(data, 99.5), stretch=AsinhStretch(0.01))
+    ax.imshow(data, origin='lower', cmap=cmap, norm=norm)
+    ax.set_title(title, fontsize=14, color='white')
+    ax.axis('off')
+
+plt.savefig('stereo_pair.png', dpi=150, bbox_inches='tight', facecolor='black')
+```
+
+**Result:**
+
+![STEREO-A EUVI Multi-Wavelength Pair](examples/stereo_pair.png)
+
+*STEREO-A SECCHI/EUVI 171A (corona, gold) and 304A (chromosphere, red) observed on 2024-06-06. Active regions with bright loops are visible in both wavelengths.*
+
+### Example 4: Visualize Solar Orbiter Multi-Wavelength Pair
+
+```python
+f174 = fits.open('./solo_data/solo/174/solo_L1_eui-fsi174-image_20240601T000045206_V02.fits')
+f304 = fits.open('./solo_data/solo/304/solo_L1_eui-fsi304-image_20240601T000015207_V02.fits')
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 8))
+
+# Note: Solar Orbiter EUI data is in HDU[1] (CompImageHDU)
+for ax, f, cmap, title in [
+    (axes[0], f174, 'sdoaia171', 'Solar Orbiter EUI/FSI 174A'),
+    (axes[1], f304, 'sdoaia304', 'Solar Orbiter EUI/FSI 304A'),
+]:
+    data = f[1].data.astype(np.float32)
+    pos = data[data > 0]
+    norm = ImageNormalize(vmin=0, vmax=np.percentile(pos, 99.5), stretch=AsinhStretch(0.01))
+    ax.imshow(data, origin='lower', cmap=cmap, norm=norm)
+    ax.set_title(title, fontsize=14, color='white')
+    ax.axis('off')
+
+plt.savefig('solo_pair.png', dpi=150, bbox_inches='tight', facecolor='black')
+```
+
+**Result:**
+
+![Solar Orbiter EUI/FSI Multi-Wavelength Pair](examples/solo_pair.png)
+
+*Solar Orbiter EUI/FSI 174A (corona) and 304A (chromosphere) observed on 2024-06-01. The smaller apparent solar disk reflects Solar Orbiter's varying distance from the Sun.*
+
+### Example 5: Pixel Intensity Distribution
+
+```python
+f = fits.open('./stereo_data/stereo-174/20240606_000700_n4euA.fts')
+data = f[0].data.astype(np.float32).flatten()
+data = data[data > 0]
+
+fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+axes[0].hist(data, bins=200, color='#FFD700', edgecolor='none')
+axes[0].set_xlabel('DN')
+axes[0].set_title('Linear Scale')
+
+axes[1].hist(np.log10(data), bins=200, color='#FF6347', edgecolor='none')
+axes[1].set_xlabel('log10(DN)')
+axes[1].set_title('Log Scale')
+
+plt.suptitle('Pixel Intensity Distribution', fontweight='bold')
+plt.savefig('pixel_dist.png', dpi=150, bbox_inches='tight')
+```
+
+**Result:**
+
+![Pixel Intensity Distribution](examples/pixel_dist.png)
+
+*STEREO-A EUVI 171A pixel intensity distribution. The linear scale (left) shows the highly skewed nature of EUV intensities. The log scale (right) reveals a bimodal distribution: the main peak (~10^2.9 DN) represents quiet Sun, while the extended tail corresponds to active regions and bright loops.*
+
+### Tips from Running These Examples
+
+| Tip | Details |
+|-----|---------|
+| **SunPy colormaps** | Import `sunpy.visualization.colormaps` to register `sdoaia171`, `sdoaia304`, etc. |
+| **Solar Orbiter HDU** | EUI data is in `HDU[1]` (CompImageHDU), not `HDU[0]` |
+| **STEREO HDU** | EUVI data is in `HDU[0]` (PrimaryHDU) |
+| **Normalization** | Use `AsinhStretch(0.01)` for EUV images to reveal faint coronal features |
+| **Negative pixels** | Filter with `data[data > 0]` before computing percentiles |
+| **Tolerance** | Set `tolerance_min=15` to ensure wavelength pairs are taken within 15 minutes of each other |
 
 ---
 
