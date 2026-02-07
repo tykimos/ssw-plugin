@@ -1,20 +1,202 @@
 # SSW Plugin for Claude Code
 
-Sun and Space Weather toolkit for Claude Code. Download, preprocess, visualize, and apply machine learning to solar observation data from SDO, STEREO, and Solar Orbiter missions.
+Sun and Space Weather (SSW) toolkit for [Claude Code](https://claude.ai/). Download, preprocess, visualize, and apply machine learning to solar observation data from SDO, STEREO, and Solar Orbiter missions.
+
+---
+
+## Table of Contents
+
+- [What is a Claude Code Plugin?](#what-is-a-claude-code-plugin)
+- [Installation](#installation)
+  - [Step 1: Add Marketplace](#step-1-add-marketplace)
+  - [Step 2: Install Plugin](#step-2-install-plugin)
+  - [Step 3: Verify Installation](#step-3-verify-installation)
+  - [Step 4: Install Python Dependencies](#step-4-install-python-dependencies)
+- [Plugin Management](#plugin-management)
+- [Skills Overview](#skills-overview)
+- [Workflow](#workflow)
+- [Skill 1: ssw-download](#skill-1-ssw-download)
+- [Skill 2: ssw-prep](#skill-2-ssw-prep)
+- [Skill 3: ssw-ml](#skill-3-ssw-ml)
+- [Skill 4: ssw-viz](#skill-4-ssw-viz)
+- [Natural Language Usage](#natural-language-usage)
+- [For Plugin Developers](#for-plugin-developers)
+  - [Plugin Structure](#plugin-structure)
+  - [How to Create Your Own Plugin](#how-to-create-your-own-plugin)
+  - [Publishing as a Marketplace](#publishing-as-a-marketplace)
+- [Dependencies](#dependencies)
+- [License](#license)
+
+---
+
+## What is a Claude Code Plugin?
+
+Claude Code plugins are extensions that add new capabilities to the Claude Code CLI. A plugin can provide:
+
+- **Skills** - Slash commands (e.g., `/ssw-plugin:ssw-download`) that give Claude specialized knowledge and workflows
+- **Agents** - Custom subagent definitions for specialized tasks
+- **Hooks** - Event handlers that respond to Claude Code lifecycle events
+- **MCP Servers** - External tool integrations via Model Context Protocol
+- **LSP Servers** - Code intelligence via Language Server Protocol
+
+Plugins are distributed through **marketplaces** - Git repositories that catalog one or more plugins. Users add a marketplace, then install individual plugins from it.
+
+---
 
 ## Installation
 
-```bash
-claude plugin add https://github.com/tykimos/ssw-plugin.git
+### Step 1: Add Marketplace
+
+Open Claude Code and register the ssw-plugin marketplace:
+
+**Option A: Inside Claude Code (interactive)**
+
+```
+/plugin marketplace add https://github.com/tykimos/ssw-plugin.git
 ```
 
-### Prerequisites
+**Option B: From terminal (CLI)**
 
 ```bash
+claude plugin marketplace add https://github.com/tykimos/ssw-plugin.git
+```
+
+This clones the repository to `~/.claude/plugins/marketplaces/ssw-plugin/` and registers it in `~/.claude/plugins/known_marketplaces.json`.
+
+### Step 2: Install Plugin
+
+**Option A: Inside Claude Code (interactive)**
+
+```
+/plugin install ssw-plugin@ssw-plugin
+```
+
+The format is `<plugin-name>@<marketplace-name>`.
+
+**Option B: From terminal (CLI)**
+
+```bash
+claude plugin install ssw-plugin@ssw-plugin
+```
+
+**Option C: Interactive plugin manager**
+
+```
+/plugin
+```
+
+This opens the plugin manager UI. Navigate to the **Discover** tab to browse and install available plugins.
+
+#### Installation Scopes
+
+You can control where the plugin is available:
+
+```bash
+# Available in all your projects (default)
+claude plugin install ssw-plugin@ssw-plugin --scope user
+
+# Available only in current project, shared with team via git
+claude plugin install ssw-plugin@ssw-plugin --scope project
+
+# Available only in current project, not shared (gitignored)
+claude plugin install ssw-plugin@ssw-plugin --scope local
+```
+
+| Scope | Settings File | Shared via Git | Use Case |
+|-------|---------------|----------------|----------|
+| `user` | `~/.claude/settings.json` | No | Personal use across all projects |
+| `project` | `.claude/settings.json` | Yes | Team-wide plugin for a project |
+| `local` | `.claude/settings.local.json` | No | Personal use for one project |
+
+### Step 3: Verify Installation
+
+After installation, verify the plugin is active:
+
+```
+/plugin
+```
+
+You should see `ssw-plugin` listed as **Enabled**. The following slash commands should be available:
+
+- `/ssw-plugin:ssw-download`
+- `/ssw-plugin:ssw-prep`
+- `/ssw-plugin:ssw-ml`
+- `/ssw-plugin:ssw-viz`
+
+You can also test by typing `/ssw-` and checking autocomplete suggestions.
+
+### Step 4: Install Python Dependencies
+
+The plugin skills require Python packages. Install them in your environment:
+
+```bash
+# Core: solar data download and preprocessing
 pip install git+https://github.com/sswlab/ssw-tools
 pip install sunpy matplotlib astropy aiapy
-pip install torch torchvision  # for ML tasks
+
+# Optional: for ML tasks (ssw-ml skill)
+pip install torch torchvision scikit-image
+
+# Optional: for logging in batch processing
+pip install loguru
 ```
+
+---
+
+## Plugin Management
+
+Common plugin management commands:
+
+```bash
+# List all installed plugins
+/plugin
+
+# Enable a disabled plugin
+/plugin enable ssw-plugin@ssw-plugin
+
+# Disable without uninstalling
+/plugin disable ssw-plugin@ssw-plugin
+
+# Uninstall completely
+/plugin uninstall ssw-plugin@ssw-plugin
+
+# Update to latest version
+/plugin update ssw-plugin@ssw-plugin
+
+# List registered marketplaces
+/plugin marketplace list
+
+# Update marketplace catalog
+/plugin marketplace update ssw-plugin
+
+# Remove marketplace
+/plugin marketplace remove ssw-plugin
+```
+
+### Where Files Are Stored
+
+| Path | Purpose |
+|------|---------|
+| `~/.claude/plugins/known_marketplaces.json` | Registered marketplace sources |
+| `~/.claude/plugins/installed_plugins.json` | Installed plugin manifest |
+| `~/.claude/plugins/marketplaces/ssw-plugin/` | Marketplace repository (git clone) |
+| `~/.claude/plugins/cache/ssw-plugin/ssw-plugin/1.0.0/` | Installed plugin files (cached copy) |
+| `~/.claude/settings.json` | Plugin enable/disable settings |
+
+### Auto-Updates
+
+By default, third-party marketplaces do not auto-update. To enable:
+
+1. Open `/plugin` -> **Marketplaces** tab
+2. Toggle auto-update for `ssw-plugin`
+
+Or set the environment variable:
+
+```bash
+export FORCE_AUTOUPDATE_PLUGINS=true
+```
+
+---
 
 ## Skills Overview
 
@@ -24,6 +206,10 @@ pip install torch torchvision  # for ML tasks
 | **ssw-prep** | `/ssw-plugin:ssw-prep` | Preprocess raw FITS data into ML-ready format |
 | **ssw-ml** | `/ssw-plugin:ssw-ml` | Train and evaluate deep learning models on solar data |
 | **ssw-viz** | `/ssw-plugin:ssw-viz` | Visualize solar images, ML results, and analysis |
+
+Skills can be invoked in two ways:
+1. **Slash command**: Type `/ssw-plugin:ssw-download` directly
+2. **Natural language**: Just describe what you need (e.g., "Download Solar Orbiter data for June 2024") and Claude will automatically invoke the appropriate skill
 
 ## Workflow
 
@@ -632,49 +818,252 @@ plt.savefig('distribution.png', dpi=300, bbox_inches='tight')
 
 ## Natural Language Usage
 
-You can also invoke skills by simply describing what you need in natural language:
+You don't have to memorize slash commands. Just describe what you need in natural language and Claude will automatically invoke the appropriate skill:
 
 | What you say | Skill triggered |
 |-------------|----------------|
 | "Download Solar Orbiter data for June 2024" | ssw-download |
-| "SDO 193A 데이터 다운로드해줘" | ssw-download |
+| "SDO 193A download" | ssw-download |
+| "STEREO data from 2024" | ssw-download |
 | "Preprocess these AIA FITS files for ML" | ssw-prep |
-| "태양 데이터 전처리해줘" | ssw-prep |
+| "Calibrate and normalize the solar images" | ssw-prep |
 | "Train a U-Net on the solar data" | ssw-ml |
-| "태양 이미지 시각화해줘" | ssw-viz |
+| "Build a flare prediction model" | ssw-ml |
 | "Show me a multi-wavelength comparison" | ssw-viz |
+| "Create a solar time-lapse animation" | ssw-viz |
+| "Plot the pixel distribution" | ssw-viz |
+
+Korean is also supported:
+
+| What you say | Skill triggered |
+|-------------|----------------|
+| "태양 관측 데이터 다운로드해줘" | ssw-download |
+| "AIA 데이터 전처리해줘" | ssw-prep |
+| "태양 딥러닝 모델 학습해줘" | ssw-ml |
+| "태양 이미지 시각화해줘" | ssw-viz |
 
 ---
 
-## Project Structure
+## For Plugin Developers
+
+### Plugin Structure
 
 ```
 ssw-plugin/
-+-- .claude-plugin/
-|   +-- plugin.json
-+-- skills/
-|   +-- ssw-download/
-|   |   +-- SKILL.md
-|   +-- ssw-prep/
-|   |   +-- SKILL.md
-|   +-- ssw-ml/
-|   |   +-- SKILL.md
-|   +-- ssw-viz/
-|       +-- SKILL.md
-+-- README.md
+├── .claude-plugin/
+│   ├── plugin.json           # Plugin manifest (metadata)
+│   └── marketplace.json      # Marketplace catalog (for distribution)
+├── skills/
+│   ├── ssw-download/
+│   │   └── SKILL.md          # Download skill definition
+│   ├── ssw-prep/
+│   │   └── SKILL.md          # Preprocessing skill definition
+│   ├── ssw-ml/
+│   │   └── SKILL.md          # ML skill definition
+│   └── ssw-viz/
+│       └── SKILL.md          # Visualization skill definition
+└── README.md
 ```
+
+**Important**: Only `plugin.json` and `marketplace.json` go inside `.claude-plugin/`. All other components (skills, agents, hooks, etc.) must be at the **plugin root level**.
+
+### How to Create Your Own Plugin
+
+#### 1. Create the directory structure
+
+```bash
+mkdir -p my-plugin/.claude-plugin
+mkdir -p my-plugin/skills/my-skill
+```
+
+#### 2. Create the manifest (`plugin.json`)
+
+```json
+{
+  "name": "my-plugin",
+  "version": "1.0.0",
+  "description": "What your plugin does",
+  "author": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "repository": "https://github.com/you/my-plugin",
+  "license": "MIT",
+  "skills": "./skills/"
+}
+```
+
+#### 3. Create a skill (`SKILL.md`)
+
+```yaml
+---
+name: my-skill
+description: "When to use this skill. Triggers: 'keyword1', 'keyword2'"
+---
+
+# My Skill
+
+Instructions for Claude when this skill is invoked.
+
+## Usage
+
+Your skill documentation here...
+```
+
+**SKILL.md frontmatter fields:**
+
+| Field | Purpose | Example |
+|-------|---------|---------|
+| `name` | Slash command name | `my-skill` -> `/my-plugin:my-skill` |
+| `description` | When Claude should auto-invoke this skill | `"Analyze CSV data..."` |
+| `disable-model-invocation` | Prevent Claude from auto-invoking (manual only) | `true` |
+| `user-invocable` | Hide from slash menu (background knowledge only) | `false` |
+| `allowed-tools` | Restrict available tools | `Read, Grep, Write` |
+| `model` | Override model for this skill | `claude-sonnet-4-5` |
+| `context` | Run in isolated subagent | `fork` |
+| `agent` | Subagent type (with `context: fork`) | `Explore` |
+| `argument-hint` | Autocomplete hint | `[filename] [format]` |
+
+#### 4. Test locally
+
+```bash
+# Test without installing
+claude --plugin-dir ./my-plugin
+
+# Validate structure
+/plugin validate ./my-plugin
+```
+
+#### 5. Push to GitHub
+
+```bash
+cd my-plugin
+git init && git add -A && git commit -m "Initial release"
+git remote add origin https://github.com/you/my-plugin.git
+git push -u origin main
+```
+
+### Publishing as a Marketplace
+
+To let others install your plugin, add a marketplace catalog file:
+
+#### 1. Create `marketplace.json`
+
+Create `.claude-plugin/marketplace.json` in your repo:
+
+```json
+{
+  "name": "my-plugin",
+  "description": "Description of your marketplace",
+  "owner": {
+    "name": "Your Name",
+    "email": "you@example.com"
+  },
+  "plugins": [
+    {
+      "name": "my-plugin",
+      "description": "What this plugin does",
+      "version": "1.0.0",
+      "source": ".",
+      "author": {
+        "name": "Your Name"
+      },
+      "category": "science",
+      "tags": ["keyword1", "keyword2"]
+    }
+  ]
+}
+```
+
+**Source options for plugins in marketplace:**
+
+```json
+// Relative path (same repo)
+"source": "."
+
+// Another GitHub repo
+"source": {
+  "source": "github",
+  "repo": "owner/repo",
+  "ref": "v1.0.0"
+}
+
+// Any Git URL
+"source": {
+  "source": "url",
+  "url": "https://gitlab.com/team/plugin.git",
+  "ref": "main"
+}
+
+// npm package
+"source": {
+  "source": "npm",
+  "package": "@org/plugin"
+}
+```
+
+#### 2. Users install your plugin
+
+```bash
+# Step 1: Add your marketplace
+/plugin marketplace add https://github.com/you/my-plugin.git
+
+# Step 2: Install the plugin
+/plugin install my-plugin@my-plugin
+```
+
+### Multi-Plugin Marketplace
+
+If you want to distribute multiple plugins from one marketplace:
+
+```
+my-marketplace/
+├── .claude-plugin/
+│   └── marketplace.json        # Lists all plugins
+├── plugins/
+│   ├── plugin-a/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json
+│   │   └── skills/
+│   └── plugin-b/
+│       ├── .claude-plugin/
+│       │   └── plugin.json
+│       └── skills/
+└── README.md
+```
+
+```json
+{
+  "name": "my-marketplace",
+  "plugins": [
+    {
+      "name": "plugin-a",
+      "source": "./plugins/plugin-a",
+      "version": "1.0.0"
+    },
+    {
+      "name": "plugin-b",
+      "source": "./plugins/plugin-b",
+      "version": "2.0.0"
+    }
+  ]
+}
+```
+
+---
 
 ## Dependencies
 
-| Package | Purpose |
-|---------|---------|
-| [ssw-tools](https://github.com/sswlab/ssw-tools) | Solar data download & preprocessing |
-| [SunPy](https://sunpy.org/) | Solar data I/O, maps, coordinate systems |
-| [astropy](https://www.astropy.org/) | FITS handling, units, visualization |
-| [aiapy](https://aiapy.readthedocs.io/) | AIA-specific calibration tables |
-| [matplotlib](https://matplotlib.org/) | Plotting and animation |
-| [PyTorch](https://pytorch.org/) | Deep learning models |
-| [scikit-image](https://scikit-image.org/) | Evaluation metrics (SSIM, PSNR) |
+| Package | Required For | Install |
+|---------|-------------|---------|
+| [ssw-tools](https://github.com/sswlab/ssw-tools) | Download & preprocessing | `pip install git+https://github.com/sswlab/ssw-tools` |
+| [SunPy](https://sunpy.org/) | Solar data I/O, maps | `pip install sunpy` |
+| [astropy](https://www.astropy.org/) | FITS handling, units | `pip install astropy` |
+| [aiapy](https://aiapy.readthedocs.io/) | AIA calibration tables | `pip install aiapy` |
+| [matplotlib](https://matplotlib.org/) | Plotting and animation | `pip install matplotlib` |
+| [PyTorch](https://pytorch.org/) | Deep learning (ssw-ml) | `pip install torch torchvision` |
+| [scikit-image](https://scikit-image.org/) | SSIM, PSNR metrics (ssw-ml) | `pip install scikit-image` |
+| [loguru](https://github.com/Delgan/loguru) | Logging (optional) | `pip install loguru` |
 
 ## License
 
