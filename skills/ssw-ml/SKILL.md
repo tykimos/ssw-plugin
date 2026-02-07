@@ -1,5 +1,5 @@
 ---
-name: ssw-ml
+name: ssw-plugin:ssw-ml
 description: "Machine learning for solar physics using preprocessed SSW data. Use when Claude needs to: (1) train deep learning models on solar EUV images, (2) build solar flare prediction models, (3) perform image-to-image translation between solar instruments, (4) detect/segment coronal holes or active regions, (5) create PyTorch/TensorFlow dataloaders for FITS files, (6) evaluate ML models on solar observation data. Triggers: 'solar ML', 'solar deep learning', 'flare prediction', 'coronal hole detection', 'instrument translation', 'solar image segmentation', 'FITS dataloader', 'solar neural network', '태양 ML', '태양 딥러닝', '플레어 예측', 'solar AI'"
 ---
 

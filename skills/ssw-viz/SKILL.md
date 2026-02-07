@@ -1,5 +1,5 @@
 ---
-name: ssw-viz
+name: ssw-plugin:ssw-viz
 description: "Solar observation data visualization for EUV imagery, ML results, and analysis. Use when Claude needs to: (1) display solar EUV images from FITS files, (2) create multi-wavelength comparison panels, (3) make before/after preprocessing comparisons, (4) visualize ML model predictions on solar data, (5) create solar time-lapse animations, (6) plot intensity distributions of solar images. Triggers: 'solar visualization', 'solar image display', 'FITS visualization', 'EUV image plot', 'multi-wavelength comparison', 'solar animation', 'sun image', '태양 이미지 시각화', '태양 시각화', 'solar plot'"
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: ssw-prep
+name: ssw-plugin:ssw-prep
 description: "SDO/AIA solar data ML preprocessing pipeline. Use when Claude needs to: (1) preprocess AIA Level 1 FITS data for machine learning, (2) calibrate solar images (pointing, degradation, exposure), (3) register and normalize solar disk images, (4) batch convert raw FITS to ML-ready format, (5) standardize solar observation data for neural network training. Triggers: 'AIA preprocessing', 'solar data prep', 'FITS preprocessing', 'aia_prep_ml', 'ML-ready solar data', 'calibrate AIA', 'solar image registration', '태양 데이터 전처리', 'AIA 보정', 'ML 전처리'"
 ---
 

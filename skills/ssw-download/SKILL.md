@@ -1,5 +1,5 @@
 ---
-name: ssw-download
+name: ssw-plugin:ssw-download
 description: "Solar observation data downloader for SDO, STEREO, and Solar Orbiter missions. Use when Claude needs to: (1) download SDO/AIA EUV data from JSOC, (2) download STEREO/SECCHI/EUVI data, (3) download Solar Orbiter/EUI/FSI data, (4) create multi-date time series of solar observations, (5) pair multi-wavelength observations. Triggers: 'solar data download', 'SDO download', 'AIA data', 'STEREO data', 'Solar Orbiter data', 'FITS download', 'sun observation data', 'EUI data', 'EUVI data', '태양 데이터 다운로드', '태양 관측 데이터'"
 ---
 
